@@ -40,7 +40,6 @@ class ARake
       define_method :parse! do
         @ec.instance_eval do
           a.accumulated_args.each do |pattern, arg_names, deps, block|
-            p deps
             deps.each do |d|
               watch "^#{Regexp.escape d}$", &block
             end
