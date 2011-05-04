@@ -57,8 +57,7 @@ module ARake
 
     def run
       load_rakefiles
-      watchr = create_custom_watchr
-      watchr.run
+      create_custom_watchr.run
     end
   end
 
