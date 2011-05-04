@@ -71,6 +71,8 @@ def redirect(stdout = $stdout, &block)
   end
 end
 
+top_level_self = self
+
 
 
 
@@ -90,6 +92,50 @@ describe ARake::CustomRakeAppliation do
 
       (s.index "outer#{self.object_id}").should_not be_nil
       (s.index "inner#{self.object_id}").should be_nil
+    end
+  end
+end
+
+
+
+
+describe ARake::Application do
+  it 'should not affect the default Rake.application' do
+    oa = Rake.application
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      oa.tasks.should be_empty
+      a.rake.tasks.should be_empty
+
+      block = Proc.new {}
+      top_level_self.instance_eval do
+        file 'foo1' => ['bar1', 'baz1'], &block
+        file 'foo2' => ['bar2', 'baz2'], &block
+      end
+
+      oa.tasks.should be_empty
+      a.rake.tasks.should_not be_empty
+    end
+  end
+
+  it 'should be able to refer tasks' do
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      a.rake.tasks.should be_empty
+
+      block = Proc.new {}
+      top_level_self.instance_eval do
+        file 'foo1' => ['bar1', 'baz1'], &block
+        file 'foo2' => ['bar2', 'baz2'], &block
+      end
+
+      a.rake.tasks.should_not be_empty
+      a.rake.tasks[0].to_s.should eql 'foo1'
+      a.rake.tasks[0].prerequisites.should eql ['bar1', 'baz1']
+      a.rake.tasks[0].actions.should eql [block]
+      a.rake.tasks[1].to_s.should eql 'foo2'
+      a.rake.tasks[1].prerequisites.should eql ['bar2', 'baz2']
+      a.rake.tasks[1].actions.should eql [block]
     end
   end
 end

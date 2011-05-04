@@ -8,30 +8,11 @@ require 'watchr'
 
 module ARake
   class Application
-    attr_accessor :accumulated_args
+    attr_accessor :rake
 
     def initialize(top_level_self)
       @top_level_self = top_level_self
-      @accumulated_args = []
-
-      hook_task_definition
-    end
-
-    def hook_task_definition
-      a = self
-      (class << @top_level_self; self; end).class_eval do
-        include Rake::TaskManager
-
-        # FIXME: How about other rake tasks?
-        define_method :file do |*args, &block|
-          super *args, &block
-          a.accumulate_args *resolve_args(args), &block
-        end
-      end
-    end
-
-    def accumulate_args(*args, &block)
-      @accumulated_args.push [*args, block]
+      @rake = CustomRakeAppliation.new
     end
 
     def create_custom_watchr
@@ -40,9 +21,11 @@ module ARake
       (class << s; self; end).class_eval do
         define_method :parse! do
           @ec.instance_eval do
-            a.accumulated_args.each do |pattern, arg_names, deps, block|
-              deps.each do |d|
-                watch "^#{Regexp.escape d}$", &block
+            a.rake.tasks.each do |t|
+              t.prerequisites.each do |p|
+                watch "^#{Regexp.escape p}$" do
+                  t.invoke
+                end
               end
             end
           end
@@ -51,13 +34,16 @@ module ARake
       Watchr::Controller.new(s, Watchr.handler.new)
     end
 
-    def load_rakefiles
-      CustomRakeAppliation.new.run
-    end
-
     def run
-      load_rakefiles
-      create_custom_watchr.run
+      original_Rake_application = Rake.application
+      begin
+        Rake.application = @rake
+
+        Rake.application.run
+        create_custom_watchr.run
+      ensure
+        Rake.application = original_Rake_application
+      end
     end
   end
 
