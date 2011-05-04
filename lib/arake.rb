@@ -52,7 +52,7 @@ module ARake
     end
 
     def load_rakefiles
-      RakeApplicationWrapper.new.run
+      CustomRakeAppliation.new.run
     end
 
     def run
@@ -61,7 +61,7 @@ module ARake
     end
   end
 
-  class RakeApplicationWrapper < Rake::Application
+  class CustomRakeAppliation < Rake::Application
     def run
       standard_exception_handling do
         init
