@@ -13,9 +13,27 @@ module ARake
     def initialize(top_level_self)
       @top_level_self = top_level_self
       @rake = CustomRakeAppliation.new
+      @_watchr = nil
+      @_watchr_script = nil
+    end
+
+    def watchr
+      @_watchr ||= create_custom_watchr
+    end
+
+    def watchr_script
+      @_watchr_script ||= create_custom_watchr_script
+    end
+
+    def watchr_rules
+      watchr_script.rules
     end
 
     def create_custom_watchr
+      Watchr::Controller.new(watchr_script, Watchr.handler.new)
+    end
+
+    def create_custom_watchr_script
       a = self
       s = Watchr::Script.new
       (class << s; self; end).class_eval do
@@ -31,7 +49,7 @@ module ARake
           end
         end
       end
-      Watchr::Controller.new(s, Watchr.handler.new)
+      s
     end
 
     def run
@@ -40,7 +58,7 @@ module ARake
         Rake.application = @rake
 
         Rake.application.run
-        create_custom_watchr.run
+        watchr.run
       ensure
         Rake.application = original_Rake_application
       end

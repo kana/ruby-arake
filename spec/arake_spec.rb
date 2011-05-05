@@ -100,6 +100,10 @@ end
 
 
 describe ARake::Application do
+  def re(s)
+    "^#{Regexp.escape s}$"
+  end
+
   it 'should not affect the default Rake.application' do
     oa = Rake.application
     a = ARake::Application.new top_level_self
@@ -136,6 +140,28 @@ describe ARake::Application do
       a.rake.tasks[1].to_s.should eql 'foo2'
       a.rake.tasks[1].prerequisites.should eql ['bar2', 'baz2']
       a.rake.tasks[1].actions.should eql [block]
+    end
+  end
+
+  it 'should define a watch rule for each dependent' do
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      a.rake.tasks.should be_empty
+      a.watchr_rules.should be_empty
+
+      block = Proc.new {}
+      top_level_self.instance_eval do
+        file 'foo1' => ['bar1', 'baz1'], &block
+        file 'foo2' => ['bar2', 'baz2'], &block
+      end
+      a.watchr_script.parse!
+
+      a.rake.tasks.should_not be_empty
+      a.watchr_rules.should_not be_empty
+      a.watchr_rules[0].pattern.should eql re('bar1')
+      a.watchr_rules[1].pattern.should eql re('baz1')
+      a.watchr_rules[2].pattern.should eql re('bar2')
+      a.watchr_rules[3].pattern.should eql re('baz2')
     end
   end
 end
