@@ -33,6 +33,10 @@ module ARake
       @_rake ||= CustomRakeAppliation.new
     end
 
+    def rake_tasks
+      rake.tasks
+    end
+
     def watchr
       @_watchr ||= _create_custom_watchr
     end
@@ -55,7 +59,7 @@ module ARake
       (class << s; self; end).class_eval do
         define_method :parse! do
           @ec.instance_eval do
-            a.rake.tasks.each do |t|
+            a.rake_tasks.each do |t|
               t.prerequisites.each do |p|
                 watch "^#{Regexp.escape p}$" do
                   a.rake.reenable_all_tasks

@@ -109,7 +109,7 @@ describe ARake::Application do
     a = ARake::Application.new top_level_self
     with_rake_application a.rake do
       oa.tasks.should be_empty
-      a.rake.tasks.should be_empty
+      a.rake_tasks.should be_empty
 
       block = Proc.new {}
       top_level_self.instance_eval do
@@ -118,14 +118,14 @@ describe ARake::Application do
       end
 
       oa.tasks.should be_empty
-      a.rake.tasks.should_not be_empty
+      a.rake_tasks.should_not be_empty
     end
   end
 
   it 'should be able to refer tasks' do
     a = ARake::Application.new top_level_self
     with_rake_application a.rake do
-      a.rake.tasks.should be_empty
+      a.rake_tasks.should be_empty
 
       block = Proc.new {}
       top_level_self.instance_eval do
@@ -133,20 +133,20 @@ describe ARake::Application do
         file 'foo2' => ['bar2', 'baz2'], &block
       end
 
-      a.rake.tasks.should_not be_empty
-      a.rake.tasks[0].to_s.should eql 'foo1'
-      a.rake.tasks[0].prerequisites.should eql ['bar1', 'baz1']
-      a.rake.tasks[0].actions.should eql [block]
-      a.rake.tasks[1].to_s.should eql 'foo2'
-      a.rake.tasks[1].prerequisites.should eql ['bar2', 'baz2']
-      a.rake.tasks[1].actions.should eql [block]
+      a.rake_tasks.should_not be_empty
+      a.rake_tasks[0].to_s.should eql 'foo1'
+      a.rake_tasks[0].prerequisites.should eql ['bar1', 'baz1']
+      a.rake_tasks[0].actions.should eql [block]
+      a.rake_tasks[1].to_s.should eql 'foo2'
+      a.rake_tasks[1].prerequisites.should eql ['bar2', 'baz2']
+      a.rake_tasks[1].actions.should eql [block]
     end
   end
 
   it 'should define a watch rule for each dependent' do
     a = ARake::Application.new top_level_self
     with_rake_application a.rake do
-      a.rake.tasks.should be_empty
+      a.rake_tasks.should be_empty
       a.watchr_rules.should be_empty
 
       block = Proc.new {}
@@ -156,7 +156,7 @@ describe ARake::Application do
       end
       a.watchr_script.parse!
 
-      a.rake.tasks.should_not be_empty
+      a.rake_tasks.should_not be_empty
       a.watchr_rules.should_not be_empty
       a.watchr_rules[0].pattern.should eql re('bar1')
       a.watchr_rules[1].pattern.should eql re('baz1')
@@ -180,7 +180,7 @@ describe ARake::Application do
       passed_task.should be_nil
 
       r.action.call
-      t = a.rake.tasks[1]
+      t = a.rake_tasks[1]
 
       t.to_s.should eql 'foo'
       passed_task.should equal t
