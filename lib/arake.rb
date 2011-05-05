@@ -100,6 +100,51 @@ module ARake
       [task]
     end
   end
+
+  module Misc
+    def self.root_tasks_of(task, tasks)
+      tree_from_task(task, pt_table_from_tasks(tasks)).leaves
+    end
+
+    def self.pt_table_from_tasks(tasks)  # prerequisite-to-target table
+      h = Hash.new {|h, name| h[name] = []}
+      tasks.each do |target_task|
+        target_task.prerequisites.each do |prerequisite|
+          h[prerequisite.to_s].push target_task
+        end
+      end
+      h
+    end
+
+    def self.tree_from_task(task, table = Hash.new {|h, key| h[key] = []})
+      t = Tree.new
+      t.value = task
+      t.subtrees = table[task.to_s].map {|x| tree_from_task x, table}
+      t
+    end
+
+    class Tree
+      attr_accessor :value
+      attr_accessor :subtrees
+
+      def initialize(value = nil, subtrees = [])
+        @value = value
+        @subtrees = subtrees
+      end
+
+      def leaf?
+        subtrees.empty?
+      end
+
+      def leaves
+        if leaf?
+          [value]
+        else
+          subtrees.map{|s| s.leaves}.inject :+
+        end
+      end
+    end
+  end
 end
 
 

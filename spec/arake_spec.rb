@@ -226,4 +226,92 @@ describe ARake::Application do
   end
 end
 
+
+
+
+describe ARake::Misc do
+  Tree = ARake::Misc::Tree
+
+  it 'should create an empty instance' do
+    t = Tree.new
+    t.value.should be_nil
+    t.subtrees.should be_empty
+
+    t.leaf?.should be_true
+    t.leaves.should eql [nil]
+  end
+
+  it 'should return values of leaves' do
+    t = Tree.new(
+      1,
+      [
+        Tree.new(2),
+        Tree.new(
+          3,
+          [Tree.new(4)]
+        ),
+        Tree.new(5),
+      ]
+    )
+
+    t.leaves.should eql [2, 4, 5]
+  end
+
+  it 'should return a tree of tasks based on their dependencies' do
+    def task(name, *prerequisites)
+      t = Rake::Task.new name, Rake::Application.new
+      t.enhance prerequisites
+      t
+    end
+
+    # t1a t1b t1c
+    #   \ /|   |
+    #    X |   |
+    #   / \|   |
+    # t2a t2b t2c
+    #  |   |  /|
+    #  |   | / |
+    #  |   |/  |
+    # t3a t3b t3c
+    #      |
+    #      |
+    #      |
+    #     t4b
+    t4b = task 't4b'
+    t3c = task 't3c'
+    t3b = task 't3b', t4b
+    t3a = task 't3a'
+    t2c = task 't2c', t3b, t3c
+    t2b = task 't2b', t3b
+    t2a = task 't2a', t3a
+    t1c = task 't1c', t2c
+    t1b = task 't1b', t2a, t2b
+    t1a = task 't1a', t2b
+
+    tasks = [
+      t1a,
+      t1b,
+      t1c,
+      t2a,
+      t2b,
+      t2c,
+      t3a,
+      t3b,
+      t3c,
+      t4b,
+    ]
+
+    ARake::Misc.root_tasks_of(t1a, tasks).should eql [t1a]
+    ARake::Misc.root_tasks_of(t1b, tasks).should eql [t1b]
+    ARake::Misc.root_tasks_of(t1c, tasks).should eql [t1c]
+    ARake::Misc.root_tasks_of(t2a, tasks).should eql [t1b]
+    ARake::Misc.root_tasks_of(t2b, tasks).should eql [t1a, t1b]
+    ARake::Misc.root_tasks_of(t2c, tasks).should eql [t1c]
+    ARake::Misc.root_tasks_of(t3a, tasks).should eql [t1b]
+    ARake::Misc.root_tasks_of(t3b, tasks).should eql [t1a, t1b, t1c]
+    ARake::Misc.root_tasks_of(t3c, tasks).should eql [t1c]
+    ARake::Misc.root_tasks_of(t4b, tasks).should eql [t1a, t1b, t1c]
+  end
+end
+
 __END__
