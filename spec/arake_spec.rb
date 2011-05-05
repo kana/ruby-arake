@@ -186,6 +186,31 @@ describe ARake::Application do
       passed_task.should equal t
     end
   end
+
+  it 'should execute rake tasks even if they are already executed before' do
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      call_count = 0
+      block = Proc.new {call_count += 1}
+      top_level_self.instance_eval do
+        task :dependent
+        task :target => :dependent, &block
+      end
+      a.watchr_script.parse!
+      r = a.watchr_rules[0]
+
+      r.pattern.should eql re(:dependent)
+      call_count.should eql 0
+
+      r.action.call
+
+      call_count.should eql 1
+
+      r.action.call
+
+      call_count.should eql 2
+    end
+  end
 end
 
 __END__

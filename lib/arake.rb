@@ -58,6 +58,7 @@ module ARake
             a.rake.tasks.each do |t|
               t.prerequisites.each do |p|
                 watch "^#{Regexp.escape p}$" do
+                  a.rake.reenable_all_tasks
                   t.invoke
                 end
               end
@@ -76,6 +77,12 @@ module ARake
         load_rakefile
         # Don't run top_level at first.  Because all tasks are automatically
         # run whenever dependents are updated.
+      end
+    end
+
+    def reenable_all_tasks
+      tasks.each do |t|
+        t.reenable
       end
     end
   end
