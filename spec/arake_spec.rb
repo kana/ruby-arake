@@ -164,6 +164,28 @@ describe ARake::Application do
       a.watchr_rules[3].pattern.should eql re('baz2')
     end
   end
+
+  it 'should invoke a rake task with proper parameters' do
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      passed_task = nil
+      block = Proc.new {|task| passed_task = task}
+      top_level_self.instance_eval do
+        file 'foo' => 'bar', &block
+      end
+      a.watchr_script.parse!
+      r = a.watchr_rules[0]
+
+      r.pattern.should eql re('bar')
+      passed_task.should be_nil
+
+      r.action.call
+      t = a.rake.tasks[1]
+
+      t.to_s.should eql 'foo'
+      passed_task.should equal t
+    end
+  end
 end
 
 __END__
