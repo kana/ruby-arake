@@ -224,6 +224,86 @@ describe ARake::Application do
       call_count.should eql 2
     end
   end
+
+  it 'should execute chained tasks properly' do
+    a = ARake::Application.new top_level_self
+    with_rake_application a.rake do
+      calling_history = []
+      block = Proc.new {|t| calling_history.push t.to_s}
+      top_level_self.instance_eval do
+        # t1a t1b t1c
+        #  |\  |   |
+        #  | \ |   |
+        #  |  \|   |
+        # t2a t2b t2c
+        #  |   |  /|
+        #  |   | / |
+        #  |   |/  |
+        # t3a t3b t3c
+        task :t1a => [:t2a, :t2b], &block
+        task :t1b => [:t2b], &block
+        task :t1c => [:t2c], &block
+        task :t2a => [:t3a], &block
+        task :t2b => [:t3b], &block
+        task :t2c => [:t3b, :t3c], &block
+        task :t3a => [], &block
+        task :t3b => [], &block
+        task :t3c => [], &block
+      end
+      a.watchr_script.parse!
+      rules_table = Hash.new {|h, key| h[key] = []}
+      a.watchr_rules.each do |r|
+        rules_table[r.pattern].push r
+      end
+      def rules_table.trigger(task_name)
+        self[task_name].each do |r|
+          r.action.call
+        end
+      end
+
+      rules_table.keys.sort.should eql [
+        re(:t2a),
+        re(:t2b),
+        re(:t2c),
+        re(:t3a),
+        re(:t3b),
+        re(:t3c),
+      ]
+      calling_history.should be_empty
+
+      calling_history.clear
+      rules_table.trigger re(:t3c)
+
+      calling_history.sort.should eql %w[t1c t2c t3b t3c]
+
+      calling_history.clear
+      rules_table.trigger re(:t2c)
+
+      calling_history.sort.should eql %w[t1c t2c t3b t3c]
+
+      calling_history.clear
+      rules_table.trigger re(:t3b)
+
+      calling_history.sort.should eql %w[
+        t1a t1b t1c t2a t2b t2c t3a t3b t3b t3c
+      ]
+
+      calling_history.clear
+      rules_table.trigger re(:t2b)
+
+      calling_history.sort.should eql %w[t1a t1b t2a t2b t2b t3a t3b t3b]
+
+      calling_history.clear
+      rules_table.trigger re(:t3a)
+
+      calling_history.sort.should eql %w[t1a t2a t2b t3a t3b]
+
+      calling_history.clear
+      rules_table.trigger re(:t2a)
+
+      calling_history.sort.should eql %w[t1a t2a t2b t3a t3b]
+    end
+  end
 end
 
 

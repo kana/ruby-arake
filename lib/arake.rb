@@ -96,8 +96,8 @@ module ARake
       end
     end
 
-    def root_tasks_of(task)  # FIXME: Not implemented yet.
-      [task]
+    def root_tasks_of(task)
+      Misc.root_tasks_of task, tasks
     end
   end
 
