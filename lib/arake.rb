@@ -63,7 +63,7 @@ module ARake
               t.prerequisites.each do |p|
                 watch "^#{Regexp.escape p}$" do
                   a.rake.reenable_all_tasks
-                  t.invoke
+                  a.rake.invoke_root_tasks_of(t)
                 end
               end
             end
@@ -88,6 +88,16 @@ module ARake
       tasks.each do |t|
         t.reenable
       end
+    end
+
+    def invoke_root_tasks_of(task)
+      root_tasks_of(task).each do |t|
+        t.invoke
+      end
+    end
+
+    def root_tasks_of(task)  # FIXME: Not implemented yet.
+      [task]
     end
   end
 end
