@@ -8,32 +8,48 @@ require 'watchr'
 
 module ARake
   class Application
-    attr_accessor :rake
-
     def initialize(top_level_self)
-      @top_level_self = top_level_self
-      @rake = CustomRakeAppliation.new
+      @_rake = nil
       @_watchr = nil
       @_watchr_script = nil
+      @top_level_self = top_level_self
+    end
+
+    def run
+      original_Rake_application = Rake.application
+      begin
+        Rake.application = rake
+
+        Rake.application.run
+        watchr.run
+      ensure
+        Rake.application = original_Rake_application
+      end
+    end
+
+    # Misc.
+
+    def rake
+      @_rake ||= CustomRakeAppliation.new
     end
 
     def watchr
-      @_watchr ||= create_custom_watchr
+      @_watchr ||= _create_custom_watchr
     end
 
-    def watchr_script
-      @_watchr_script ||= create_custom_watchr_script
+    def _create_custom_watchr
+      Watchr::Controller.new(watchr_script, Watchr.handler.new)
     end
 
     def watchr_rules
       watchr_script.rules
     end
 
-    def create_custom_watchr
-      Watchr::Controller.new(watchr_script, Watchr.handler.new)
+    def watchr_script
+      @_watchr_script ||= _create_custom_watchr_script
     end
 
-    def create_custom_watchr_script
+    def _create_custom_watchr_script
       a = self
       s = Watchr::Script.new
       (class << s; self; end).class_eval do
@@ -50,18 +66,6 @@ module ARake
         end
       end
       s
-    end
-
-    def run
-      original_Rake_application = Rake.application
-      begin
-        Rake.application = @rake
-
-        Rake.application.run
-        watchr.run
-      ensure
-        Rake.application = original_Rake_application
-      end
     end
   end
 
