@@ -113,8 +113,12 @@ describe ARake::Application do
 
       block = Proc.new {}
       top_level_self.instance_eval do
-        file 'foo1' => ['bar1', 'baz1'], &block
-        file 'foo2' => ['bar2', 'baz2'], &block
+        task 'bar1'
+        task 'bar2'
+        task 'baz1'
+        task 'baz2'
+        task 'foo1' => ['bar1', 'baz1'], &block
+        task 'foo2' => ['bar2', 'baz2'], &block
       end
 
       oa.tasks.should be_empty
@@ -129,17 +133,21 @@ describe ARake::Application do
 
       block = Proc.new {}
       top_level_self.instance_eval do
-        file 'foo1' => ['bar1', 'baz1'], &block
-        file 'foo2' => ['bar2', 'baz2'], &block
+        task 'bar1'
+        task 'bar2'
+        task 'baz1'
+        task 'baz2'
+        task 'foo1' => ['bar1', 'baz1'], &block
+        task 'foo2' => ['bar2', 'baz2'], &block
       end
 
       a.rake_tasks.should_not be_empty
-      a.rake_tasks[0].to_s.should eql 'foo1'
-      a.rake_tasks[0].prerequisites.should eql ['bar1', 'baz1']
-      a.rake_tasks[0].actions.should eql [block]
-      a.rake_tasks[1].to_s.should eql 'foo2'
-      a.rake_tasks[1].prerequisites.should eql ['bar2', 'baz2']
-      a.rake_tasks[1].actions.should eql [block]
+      a.rake_tasks[-2].to_s.should eql 'foo1'
+      a.rake_tasks[-2].prerequisites.should eql ['bar1', 'baz1']
+      a.rake_tasks[-2].actions.should eql [block]
+      a.rake_tasks[-1].to_s.should eql 'foo2'
+      a.rake_tasks[-1].prerequisites.should eql ['bar2', 'baz2']
+      a.rake_tasks[-1].actions.should eql [block]
     end
   end
 
@@ -151,8 +159,12 @@ describe ARake::Application do
 
       block = Proc.new {}
       top_level_self.instance_eval do
-        file 'foo1' => ['bar1', 'baz1'], &block
-        file 'foo2' => ['bar2', 'baz2'], &block
+        task 'bar1'
+        task 'bar2'
+        task 'baz1'
+        task 'baz2'
+        task 'foo1' => ['bar1', 'baz1'], &block
+        task 'foo2' => ['bar2', 'baz2'], &block
       end
       a.watchr_script.parse!
 
@@ -171,7 +183,8 @@ describe ARake::Application do
       passed_task = nil
       block = Proc.new {|task| passed_task = task}
       top_level_self.instance_eval do
-        file 'foo' => 'bar', &block
+        task 'bar'
+        task 'foo' => 'bar', &block
       end
       a.watchr_script.parse!
       r = a.watchr_rules[0]
